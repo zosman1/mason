@@ -32,3 +32,6 @@ contrib/geomason/repository/jars/hotspotsData.jar
 contrib/geomason/repository/jars/refugeeData.jar
 contrib/geomason/repository/jars/swiselib.jar
 kiberaData.jar
+contrib/geomason/repository/jars/ConflictDiamondsData.jar
+contrib/geomason/repository/jars/RiftlandData.jar
+contrib/geomason/repository/jars/cityMigrationData.jar
