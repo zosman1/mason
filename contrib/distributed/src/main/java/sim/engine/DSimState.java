@@ -135,7 +135,6 @@ public class DSimState extends SimState {
 			System.exit(-1);
 		}
 		for (final PayloadWrapper payloadWrapper : transporter.objectQueue) {
-//			System.out.println("Migrating - " + payloadWrapper);
 
 			/*
 			 * Assumptions about what is to be added to the field using addToField method
@@ -305,6 +304,14 @@ public class DSimState extends SimState {
 		mpi.MPI.Finalize();
 	}
 
+	/**
+	 * Modelers must override this method if they want to add any logic that is
+	 * unique to the root processor
+	 */
+	protected void startRoot() {
+		System.out.println("Master level 0 pid: " + partition.pid);
+	}
+
 	public void start() {
 		super.start();
 
@@ -318,6 +325,10 @@ public class DSimState extends SimState {
 		}
 		for (final HaloField<? extends Serializable, ? extends NdPoint, ? extends GridStorage> haloField : fieldRegistry)
 			haloField.initRemote();
+
+		if (partition.isRoot())
+			startRoot();
+		// TODO: do we need to sync all processors here?
 	}
 
 	public boolean isDistributed() {
