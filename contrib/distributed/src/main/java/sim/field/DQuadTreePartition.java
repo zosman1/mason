@@ -64,16 +64,12 @@ public class DQuadTreePartition extends DPartition {
 		return toPartitionId(new DoublePoint(c));
 	}
 
-	protected void setMPITopo() {
+	protected void createMPITopo() {
 		final int[] ns = getNeighborIds();
 
 		try {
 			// Create a unweighted & undirected graph for neighbor communication
-			comm = MPI.COMM_WORLD.createDistGraphAdjacent(
-					ns,
-					ns,
-					new Info(),
-					false);
+			comm = MPI.COMM_WORLD.createDistGraphAdjacent(ns, ns, new Info(), false);
 
 			// Create the group comms for nodes at the same level (intercomm) and for nodes
 			// and its all leaves (intracomm)
@@ -84,29 +80,38 @@ public class DQuadTreePartition extends DPartition {
 		}
 	}
 
-	public void initQuadTree(final List<IntPoint> splitPoints) {
+	/**
+	 * This method is only used internally, for init use initialize instead
+	 *
+	 * @param splitPoints
+	 */
+	void initQuadTree(final List<IntPoint> splitPoints) {
 		// Create the quad tree based on the given split points
 		qt.split(splitPoints);
 
 		// map all quad tree nodes to processors
 		mapNodeToProc();
-		setMPITopo();
+		createMPITopo();
 	}
 
-	@Override
 	public void initialize() {
 		initUniformly();
 	}
 
-	public void initUniformly() {
+	/**
+	 * This method is only used internally, for init use initialize instead
+	 */
+	void initUniformly() {
 		// Init into a full quad tree
+
 		// Check whether np is power of (2 * nd)
-		// np's binary represention only contains a single one i.e., (np & (np - 1)) ==
-		// 0
+		// np's binary represention only contains a single one i.e.,
+		// (np & (np - 1)) == 0
 		// and the number of zeros before it is evenly divided by nd
 		int nz = 0;
 		while ((numProcessors >> nz & 0x1) != 0x1)
 			nz++;
+
 		if ((numProcessors & numProcessors - 1) != 0 || nz % numDimensions != 0)
 			throw new IllegalArgumentException(
 					"Currently only support the number processors that is power of " + (2 * numDimensions));
@@ -116,9 +121,8 @@ public class DQuadTreePartition extends DPartition {
 			for (final QTNode leaf : leaves)
 				qt.split(leaf.getShape().getCenter());
 		}
-
 		mapNodeToProc();
-		setMPITopo();
+		createMPITopo();
 	}
 
 	protected void mapNodeToProc() {
@@ -132,11 +136,13 @@ public class DQuadTreePartition extends DPartition {
 		for (int i = 0; i < numProcessors; i++)
 			leaves.get(i).setProc(i);
 
+		// if pid == 0 then myLeafNode is root node
 		myLeafNode = leaves.get(pid);
 
 		// Map non-leaf nodes - Use the first children node to hold itself
 		while (leaves.size() > 0) {
-			final QTNode curr = leaves.remove(0), parent = curr.getParent();
+			final QTNode curr = leaves.remove(0);
+			final QTNode parent = curr.getParent();
 			if (parent == null || parent.getChild(0) != curr)
 				continue;
 			parent.setProc(curr.getProc());
@@ -154,11 +160,8 @@ public class DQuadTreePartition extends DPartition {
 		groups = new HashMap<Integer, GroupComm>();
 
 		// Iterate level by level to create groups
-		List<QTNode> currLevel = new ArrayList<QTNode>() {
-			{
-				add(qt.getRoot());
-			}
-		};
+		List<QTNode> currLevel = new ArrayList<QTNode>();
+		currLevel.add(qt.getRoot());
 		while (currLevel.size() > 0) {
 			final List<QTNode> nextLevel = new ArrayList<QTNode>();
 
@@ -196,9 +199,8 @@ public class DQuadTreePartition extends DPartition {
 		return isGroupMaster(getGroupComm(level));
 	}
 
-	public boolean isRoot() {
-		// TODO: is this correct?
-		// assuming that the root of level 0 is the global root for mpi as well
+	public boolean isGlobalMaster() {
+		// The Global Master of Quad Tree is global root for MPI as well
 		return isGroupMaster(0);
 	}
 
@@ -206,15 +208,18 @@ public class DQuadTreePartition extends DPartition {
 	 * @param level
 	 * @return the GroupComm instance if the calling pid should be involved in the
 	 *         group communication of the given level <br>
-	 *         return null otherwise
+	 *         null otherwise
 	 */
 	public GroupComm getGroupComm(final int level) {
 		return groups.get(level);
 	}
 
-	// return the shape when the calling pid holds one of the master nodes of this
-	// level
-	// return null otherwise
+	/**
+	 * @param level
+	 * @return the shape when the calling pid holds one of the master nodes of this
+	 *         level <br>
+	 *         null otherwise
+	 */
 	public IntHyperRect getNodeShapeAtLevel(final int level) {
 		final GroupComm gc = getGroupComm(level);
 		if (isGroupMaster(gc))
@@ -253,6 +258,7 @@ public class DQuadTreePartition extends DPartition {
 		MPI.COMM_WORLD.barrier();
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void balance(final double myRt, final int level) throws MPIException {
 		final GroupComm gc = groups.get(level);
 
@@ -285,7 +291,9 @@ public class DQuadTreePartition extends DPartition {
 			if (obj[0] != null)
 				qt.moveOrigin((int) obj[0], (IntPoint) obj[1]);
 
-		setMPITopo();
+		// Assigns new neighbors after balancing
+		// Recreates MPI topology based on that
+		createMPITopo();
 
 		// call postcommit
 		for (final Consumer r : postCallbacks)
@@ -358,7 +366,6 @@ public class DQuadTreePartition extends DPartition {
 		MPI.Finalize();
 	}
 
-	@Override
 	public String toString() {
 		return "DQuadTreePartition [qt=" + qt + ", myLeafNode=" + myLeafNode + ", groups=" + groups + ", aoi="
 				+ Arrays.toString(aoi) + "]";

@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import mpi.Comm;
 import mpi.Datatype;
 import mpi.MPI;
 import mpi.MPIException;
 import sim.engine.DSimState;
 import sim.engine.IterativeRepeat;
 import sim.engine.Steppable;
+import sim.engine.Stopping;
 import sim.field.storage.GridStorage;
 import sim.util.GroupComm;
 import sim.util.IntHyperRect;
@@ -42,7 +42,6 @@ public abstract class HaloField<T extends Serializable, P extends NdPoint, S ext
 	protected List<Neighbor> neighbors; // pointer to the processors who's partitions neighbor me
 	protected S localStorage;
 	protected DPartition partition;
-	protected Comm comm;
 	protected Datatype MPIBaseType;
 
 	public final int fieldIndex;
@@ -124,7 +123,6 @@ public abstract class HaloField<T extends Serializable, P extends NdPoint, S ext
 	}
 
 	public void reload() {
-		comm = partition.getCommunicator();
 		origPart = partition.getPartition();
 
 		// Get the partition representing halo and local area by expanding the original
@@ -188,10 +186,10 @@ public abstract class HaloField<T extends Serializable, P extends NdPoint, S ext
 
 	public void addAgent(final P p, final T t) {
 		// TODO: is there a better way than just doing a Type Cast?
-		if (!(t instanceof Steppable))
-			throw new IllegalArgumentException("t must be a Steppable");
+		if (!(t instanceof Stopping))
+			throw new IllegalArgumentException("t must be a Stopping");
 
-		final Steppable agent = (Steppable) t;
+		final Stopping agent = (Stopping) t;
 
 		if (inLocal(p)) {
 			add(p, t);
@@ -201,10 +199,10 @@ public abstract class HaloField<T extends Serializable, P extends NdPoint, S ext
 	}
 
 	public void addAgent(final P p, final T t, final int ordering, final double time) {
-		if (!(t instanceof Steppable))
-			throw new IllegalArgumentException("t must be a Steppable");
+		if (!(t instanceof Stopping))
+			throw new IllegalArgumentException("t must be a Stopping");
 
-		final Steppable agent = (Steppable) t;
+		final Stopping agent = (Stopping) t;
 
 		if (inLocal(p)) {
 			add(p, t);
@@ -217,10 +215,10 @@ public abstract class HaloField<T extends Serializable, P extends NdPoint, S ext
 		if (!inLocal(fromP))
 			throw new IllegalArgumentException("fromP must be local");
 
-		if (!(t instanceof Steppable))
-			throw new IllegalArgumentException("t must be a Steppable");
+		if (!(t instanceof Stopping))
+			throw new IllegalArgumentException("t must be a Stopping");
 
-		final Steppable agent = (Steppable) t;
+		final Stopping agent = (Stopping) t;
 
 		remove(fromP, t);
 
@@ -236,10 +234,10 @@ public abstract class HaloField<T extends Serializable, P extends NdPoint, S ext
 		if (!inLocal(fromP))
 			throw new IllegalArgumentException("fromP must be local");
 
-		if (!(t instanceof Steppable))
-			throw new IllegalArgumentException("t must be a Steppable");
+		if (!(t instanceof Stopping))
+			throw new IllegalArgumentException("t must be a Stopping");
 
-		final Steppable agent = (Steppable) t;
+		final Stopping agent = (Stopping) t;
 
 		remove(fromP, t);
 
@@ -252,39 +250,36 @@ public abstract class HaloField<T extends Serializable, P extends NdPoint, S ext
 	}
 
 	public void addRepeatingAgent(final P p, final T t, final double time, final int ordering, final double interval) {
-		if (!(t instanceof Steppable))
-			throw new IllegalArgumentException("t must be a Steppable");
+		if (!(t instanceof Stopping))
+			throw new IllegalArgumentException("t must be a Stopping");
 
 		if (inLocal(p)) {
 			add(p, t);
 			final IterativeRepeat iterativeRepeat = state.schedule.scheduleRepeating(time, ordering,
-					(Steppable) t, interval);
-			state.registerIterativeRepeat(iterativeRepeat);
-
+					(Stopping) t, interval);
 		} else {
-			final IterativeRepeat iterativeRepeat = new IterativeRepeat((Steppable) t, time, interval, ordering);
+			final IterativeRepeat iterativeRepeat = new IterativeRepeat((Stopping) t, time, interval, ordering);
 			state.getTransporter().migrateRepeatingAgent(iterativeRepeat, partition.toPartitionId(p));
 		}
 	}
 
 	public void addRepeatingAgent(final P p, final T t, final int ordering, final double interval) {
-		if (!(t instanceof Steppable))
-			throw new IllegalArgumentException("t must be a Steppable");
+		if (!(t instanceof Stopping))
+			throw new IllegalArgumentException("t must be a Stopping");
 
 		if (inLocal(p)) {
 			add(p, t);
-			final IterativeRepeat iterativeRepeat = state.schedule.scheduleRepeating((Steppable) t,
+			final IterativeRepeat iterativeRepeat = state.schedule.scheduleRepeating((Stopping) t,
 					ordering, interval);
-			state.registerIterativeRepeat(iterativeRepeat);
 		} else {
 			// TODO: look at the time here
-			final IterativeRepeat iterativeRepeat = new IterativeRepeat((Steppable) t, -1, interval, ordering);
+			final IterativeRepeat iterativeRepeat = new IterativeRepeat((Stopping) t, -1, interval, ordering);
 			state.getTransporter().migrateRepeatingAgent(iterativeRepeat, partition.toPartitionId(p));
 		}
 	}
 
 //	public void addRepeatingAgent(final P p, final IterativeRepeat iterativeRepeat) {
-//		final T t = (T) iterativeRepeat.getSteppable();
+//		final T t = (T) iterativeRepeat.getStopping();
 //
 //		if (inLocal(p)) {
 //			add(p, t);
@@ -299,21 +294,26 @@ public abstract class HaloField<T extends Serializable, P extends NdPoint, S ext
 
 		// TODO: Should we remove the instanceOf check and assume that the
 		// pre-conditions are always met?
-		if (!(t instanceof Steppable))
-			throw new IllegalArgumentException("t must be a Steppable");
+		if (!(t instanceof Stopping))
+			throw new IllegalArgumentException("t must be a Stopping");
 
-		state.stopIterativeRepeat((Steppable) t);
-
+		final Stopping stopping = (Stopping) t;
 		remove(p, t);
+		stopping.getStoppable().stop();
 	}
 
 	public void removeAndStopRepeatingAgent(final P p, final IterativeRepeat iterativeRepeat) {
 		if (!inLocal(p))
 			throw new IllegalArgumentException("p must be local");
 
-		final T t = (T) iterativeRepeat.getSteppable();
-		remove(p, t);
-		state.stopIterativeRepeat(iterativeRepeat);
+		final Steppable step = iterativeRepeat.getSteppable();
+
+		if (!(step instanceof Stopping))
+			throw new IllegalArgumentException("t must be a Stopping");
+
+		final Stopping stopping = (Stopping) step;
+		remove(p, (T) step);
+		stopping.getStoppable().stop();
 	}
 
 	public void moveRepeatingAgent(final P fromP, final P toP, final T t) {
@@ -326,11 +326,15 @@ public abstract class HaloField<T extends Serializable, P extends NdPoint, S ext
 		// pre-conditions are always met?
 		if (inLocal(toP))
 			add(toP, t);
-		else if (!(t instanceof Steppable))
-			throw new IllegalArgumentException("t must be a Steppable");
-		else
-			state.getTransporter().migrateRepeatingAgent(state.stopIterativeRepeat((Steppable) t),
-					partition.toPartitionId(toP), toP, fieldIndex);
+		else if (!(t instanceof Stopping))
+			throw new IllegalArgumentException("t must be a Stopping");
+		else {
+			final Stopping stopping = (Stopping) t;
+			final IterativeRepeat iterativeRepeat = (IterativeRepeat) stopping.getStoppable();
+			state.getTransporter().migrateRepeatingAgent(iterativeRepeat, partition.toPartitionId(toP), toP,
+					fieldIndex);
+			iterativeRepeat.stop();
+		}
 	}
 
 	public void moveRepeatingAgent(final P fromP, final P toP, final IterativeRepeat iterativeRepeat) {
@@ -347,9 +351,9 @@ public abstract class HaloField<T extends Serializable, P extends NdPoint, S ext
 		if (inLocal(toP))
 			add(toP, t);
 		else {
-			state.stopIterativeRepeat(iterativeRepeat);
 			state.getTransporter().migrateRepeatingAgent(iterativeRepeat, partition.toPartitionId(toP), toP,
 					fieldIndex);
+			iterativeRepeat.stop();
 		}
 	}
 

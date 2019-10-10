@@ -38,19 +38,29 @@ public class TentativeStep implements Steppable, Stoppable
     private static final long serialVersionUID = 1;
 
     public Steppable step;
+    Object[] lock = new Object[0];
+    
     public TentativeStep(Steppable step)
         {
         this.step = step;
         }
         
-    public synchronized void step(SimState state)
+    public void step(SimState state)
         {
-        if (step!=null)
-            step.step(state);
+        synchronized(lock)
+        	{
+        	if (step!=null)
+            	step.step(state);
+            }
         }
     
-    public synchronized void stop()
+    public void stop()
         {
-        step = null;
+        synchronized(lock)
+			{
+			step = null;
+			}
         }
+        
+    public Steppable getSteppable() { return step; }
     }

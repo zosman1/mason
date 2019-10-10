@@ -512,7 +512,7 @@ public class Schedule implements java.io.Serializable
         schedule any more events (it's sealed or the time is AFTER_SIMULATION), or if the
         event is being scheduled for AFTER_SIMULATION.  The method 
         throws an IllegalArgumentException if the event is being scheduled for an invalid time, or is null. */
-    protected boolean scheduleOnce(Key key, final Steppable event)
+    boolean scheduleOnce(Key key, final Steppable event)
         {
         synchronized(lock)
             {
@@ -526,7 +526,7 @@ public class Schedule implements java.io.Serializable
         schedule any more events (it's sealed or the time is AFTER_SIMULATION), or if the
         event is being scheduled for AFTER_SIMULATION.  The method 
         throws an IllegalArgumentException if the event is being scheduled for an invalid time, or is null. */
-    boolean _scheduleOnce(Key key, final Steppable event)
+    protected boolean _scheduleOnce(Key key, Steppable event)
         {
         // locals are a teeny bit faster
         double time = this.time;
@@ -554,6 +554,7 @@ public class Schedule implements java.io.Serializable
             throw new IllegalArgumentException("The provided Steppable is null");
         
         queue.add(event, key);
+        
         return true;
         }
 
@@ -718,12 +719,11 @@ public class Schedule implements java.io.Serializable
     public IterativeRepeat scheduleRepeating(final double time, final int ordering, final Steppable event, final double interval)
         {
         if (interval <= 0) throw new IllegalArgumentException("The steppable " +  event + " was scheduled repeating with an impossible interval ("+interval+")");
-        Schedule.Key k = new Schedule.Key(time,ordering);
-        IterativeRepeat r = new IterativeRepeat(event, time, interval, ordering, k);
+        IterativeRepeat r = new IterativeRepeat(event, time, interval, ordering);
 
         synchronized(lock)
             {
-            if (_scheduleOnce(k,r)) return r; 
+            if (_scheduleOnce(r.getKey(),r)) return r;
             else return null;
             }
         }

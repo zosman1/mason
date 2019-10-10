@@ -13,7 +13,7 @@ import java.util.HashMap;
 
 import mpi.MPI;
 import mpi.MPIException;
-import sim.engine.Steppable;
+import sim.engine.Stopping;
 import sim.field.DPartition;
 import sim.util.NdPoint;
 
@@ -109,7 +109,7 @@ public class DRemoteTransporter {
 
 		// First exchange count[] of the send byte buffers with neighbors so that we can
 		// setup recvbuf
-		partition.comm.neighborAllToAll(src_count, 1, MPI.INT, dst_count, 1, MPI.INT);
+		partition.getCommunicator().neighborAllToAll(src_count, 1, MPI.INT, dst_count, 1, MPI.INT);
 		for (int i = 0, total = 0; i < numNeighbors; i++) {
 			dst_displ[i] = total;
 			total += dst_count[i];
@@ -117,8 +117,8 @@ public class DRemoteTransporter {
 		final ByteBuffer recvbuf = ByteBuffer.allocateDirect(dst_displ[numNeighbors - 1] + dst_count[numNeighbors - 1]);
 
 		// exchange the actual object bytes
-		partition.comm.neighborAllToAllv(sendbuf, src_count, src_displ, MPI.BYTE, recvbuf, dst_count, dst_displ,
-				MPI.BYTE);
+		partition.getCommunicator().neighborAllToAllv(sendbuf, src_count, src_displ, MPI.BYTE, recvbuf, dst_count,
+				dst_displ, MPI.BYTE);
 
 		// read and handle incoming objects
 		final ArrayList<PayloadWrapper> bufferList = new ArrayList<>();
@@ -188,7 +188,7 @@ public class DRemoteTransporter {
 	 *
 	 * @throws IllegalArgumentException if destination (pid) is local
 	 */
-	public void migrateAgent(final Steppable agent, final int dst) {
+	public void migrateAgent(final Stopping agent, final int dst) {
 		migrateAgent(new AgentWrapper(agent), dst);
 	}
 
@@ -201,7 +201,7 @@ public class DRemoteTransporter {
 	 *
 	 * @throws IllegalArgumentException if destination (pid) is local
 	 */
-	public void migrateAgent(final int ordering, final Steppable agent, final int dst) {
+	public void migrateAgent(final int ordering, final Stopping agent, final int dst) {
 		migrateAgent(new AgentWrapper(ordering, agent), dst);
 	}
 
@@ -215,12 +215,12 @@ public class DRemoteTransporter {
 	 *
 	 * @throws IllegalArgumentException if destination (pid) is local
 	 */
-	public void migrateAgent(final int ordering, final double time, final Steppable agent, final int dst) {
+	public void migrateAgent(final int ordering, final double time, final Stopping agent, final int dst) {
 		migrateAgent(new AgentWrapper(ordering, time, agent), dst);
 	}
 
 	/**
-	 * Internal method. Don't use AgentWrapper, use Steppable instead <br>
+	 * Internal method. Don't use AgentWrapper, use Stopping instead <br>
 	 * Does not transport the Object, only migrates it
 	 *
 	 * @param agentWrapper
@@ -229,7 +229,7 @@ public class DRemoteTransporter {
 	 * @throws IllegalArgumentException if destination (pid) is local
 	 */
 	public void migrateAgent(final AgentWrapper agentWrapper, final int dst) {
-		// If fieldIndex < 0 then we assume that the payload does not need to be transported
+		// If fieldIndex < 0 then the payload does not need to be transported
 		migrateAgent(agentWrapper, dst, null, -1);
 	}
 
@@ -243,7 +243,7 @@ public class DRemoteTransporter {
 	 *
 	 * @throws IllegalArgumentException if destination (pid) is local
 	 */
-	public void migrateAgent(final Steppable agent, final int dst, final NdPoint loc,
+	public void migrateAgent(final Stopping agent, final int dst, final NdPoint loc,
 			final int fieldIndex) {
 		migrateAgent(new AgentWrapper(agent), dst, loc, fieldIndex);
 	}
@@ -259,7 +259,7 @@ public class DRemoteTransporter {
 	 *
 	 * @throws IllegalArgumentException if destination (pid) is local
 	 */
-	public void migrateAgent(final int ordering, final Steppable agent, final int dst, final NdPoint loc,
+	public void migrateAgent(final int ordering, final Stopping agent, final int dst, final NdPoint loc,
 			final int fieldIndex) {
 		migrateAgent(new AgentWrapper(ordering, agent), dst, loc, fieldIndex);
 	}
@@ -276,7 +276,7 @@ public class DRemoteTransporter {
 	 *
 	 * @throws IllegalArgumentException if destination (pid) is local
 	 */
-	public void migrateAgent(final int ordering, final double time, final Steppable agent, final int dst,
+	public void migrateAgent(final int ordering, final double time, final Stopping agent, final int dst,
 			final NdPoint loc, final int fieldIndex) {
 		migrateAgent(new AgentWrapper(ordering, time, agent), dst, loc, fieldIndex);
 	}
@@ -306,13 +306,13 @@ public class DRemoteTransporter {
 	 * @throws IllegalArgumentException if destination (pid) is local
 	 */
 	public void migrateRepeatingAgent(final IterativeRepeat iterativeRepeat, final int dst) {
-		// If fieldIndex < 0 then we assume that the payload does not need to be transported
+		// If fieldIndex < 0 then the payload does not need to be transported
 		migrateRepeatingAgent(iterativeRepeat, dst, null, -1);
 	}
 
 	/**
 	 * Transports the Object as well as migrates it. Does not stop() the repeating
-	 * object. Thus, call stop on iterativeRepeat before calling this function
+	 * object. Thus, call stop on iterativeRepeat after calling this function
 	 *
 	 * @param iterativeRepeat
 	 * @param dst             destination pId
@@ -333,7 +333,7 @@ public class DRemoteTransporter {
 
 	/**
 	 * Transports the Object but doesn't schedule it. Does not stop() the repeating
-	 * object. Thus, call stop on iterativeRepeat before calling this function
+	 * object. Thus, call stop on iterativeRepeat after calling this function
 	 *
 	 * @param obj        Object to be transported
 	 * @param dst        destination pId

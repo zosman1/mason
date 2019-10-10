@@ -19,31 +19,16 @@ public class IterativeRepeat implements Steppable, Stoppable
     {
     private static final long serialVersionUID = 1;
 
-    int ordering;  // so distributed MASON can grab it later if needed
-    double time;  // so distributed MASON can grab it later if needed
     double interval;
     Steppable step;  // if null, does not reschedule
     Schedule.Key key;
+    protected Object[] lock = new Object[0];
     
-    public int getOrdering() { return ordering; }
+    public int getOrdering() { return key.ordering; }
     public double getInterval() { return interval; }
-    public double getTime() { return time; }
+    public double getTime() { return key.time; }
     public Steppable getSteppable() { return step; }
-        
-    public IterativeRepeat(final Steppable step, final double time, final double interval, final int ordering, final Schedule.Key key)
-        {
-        if (interval < 0)
-            throw new IllegalArgumentException("For the Steppable...\n\n" + step +
-                "\n\n...the interval provided ("+interval+") is less than zero");
-        else if (interval != interval)  /* NaN */
-            throw new IllegalArgumentException("For the Steppable...\n\n" + step +
-                "\n\n...the interval provided ("+interval+") is NaN");
-
-        this.step = step;
-        this.interval = interval;
-        this.key = key;
-        this.ordering = ordering;
-        }
+    public Schedule.Key getKey() { return key; }
     
     public IterativeRepeat(final Steppable step, final double time, final double interval, final int ordering)
         {
@@ -57,11 +42,12 @@ public class IterativeRepeat implements Steppable, Stoppable
         this.step = step;
         this.interval = interval;
         this.key = new Schedule.Key(time,ordering);
-        this.ordering = ordering;
         }
         
-    public synchronized void step(final SimState state)
+    public void step(final SimState state)
         {
+        synchronized(lock)
+        	{
         if (step!=null)
             {
             try
@@ -69,7 +55,7 @@ public class IterativeRepeat implements Steppable, Stoppable
                 // reuse the Key to save some gc perhaps -- it's been pulled out and discarded at this point
                 key.time += interval;
                 if (key.time < Schedule.AFTER_SIMULATION) 
-                    state.schedule.scheduleOnce(key,this);  // may return false if we couldn't schedule, which is fine
+                    state.schedule.scheduleOnce(key, this);  // may return false if we couldn't schedule, which is fine
                 }
             catch (IllegalArgumentException e)
                 {
@@ -79,11 +65,15 @@ public class IterativeRepeat implements Steppable, Stoppable
             step.step(state);
             assert sim.util.LocationLog.clear();
             }
+            }
         }
         
-    public synchronized void stop()  
+    public void stop()  
         {
-        step = null;
+        synchronized(lock)
+        	{
+        	step = null;
+        	}
         }
         
     public String toString() { return "Schedule.IterativeRepeat[" + step + "]"; }
