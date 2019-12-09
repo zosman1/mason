@@ -84,7 +84,7 @@ public class Cluster // implements Steppable
 	            BufferedReader clusterControl;
 	            if (datapath.equals(""))
 	            	clusterControl = new BufferedReader(new InputStreamReader(
-	                		RiftlandData.class.getResourceAsStream("clusterData/ClusterControl.txt")));
+	                		RiftlandData.class.getResourceAsStream("ClusterData/ClusterControl.txt")));
 	            else
 	                clusterControl = new BufferedReader(new InputStreamReader(
 	                		Cluster.class.getResourceAsStream(datapath + params.world.getWeatherClusterControlFile())));
@@ -130,7 +130,7 @@ public class Cluster // implements Steppable
 			BufferedReader clusterInfo;
 			if (datapath.equals("")) {
 				clusterInfo = new BufferedReader(new InputStreamReader(RiftlandData.class
-						.getResourceAsStream("clusterData/ClusterInfo.txt")));
+						.getResourceAsStream("ClusterData/ClusterInfo.txt")));
 			} else {
 				clusterInfo = new BufferedReader(new InputStreamReader(
 						Cluster.class.getResourceAsStream(clusterFile)));
@@ -165,7 +165,7 @@ public class Cluster // implements Steppable
             BufferedReader clusterControl;
             if (datapath.equals(""))
             	clusterControl = new BufferedReader(new InputStreamReader(
-                		RiftlandData.class.getResourceAsStream("clusterData/ClusterControl.txt")));
+                		RiftlandData.class.getResourceAsStream("ClusterData/ClusterControl.txt")));
             else
                 clusterControl = new BufferedReader(new InputStreamReader(
                 		Cluster.class.getResourceAsStream(datapath + params.world.getWeatherClusterControlFile())));

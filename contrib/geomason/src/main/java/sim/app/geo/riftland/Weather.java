@@ -527,7 +527,7 @@ public class Weather implements Steppable
                 BufferedReader rainfall;
                 if ("".equals(datapath))
                 {
-                    rainfall = new BufferedReader(new InputStreamReader(RiftlandData.class.getResourceAsStream("rainData/" + month + ".txt")));
+                    rainfall = new BufferedReader(new InputStreamReader(RiftlandData.class.getResourceAsStream("RainData/" + month + ".txt")));
                 }
                 else
                 {

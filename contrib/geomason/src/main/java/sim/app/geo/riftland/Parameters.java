@@ -581,16 +581,16 @@ public class Parameters {
 		private String datapath = "/riftland/riftlandData/";
 		private String populationFile = "popData/riftpopulation.asc";
 		private String politicalBoundariesFile = "RiftLand_Boundary.shp";
-		private String landuseFile = "landData/landquality.txt";
-		private String farmerFile = "landData/landtenure.txt";
-		private String urbanuseFile = "rluData/rlurbareas.txt";
-		private String parklandFile = "landData/landreserved.txt";
-		private String forestFile = "landData/landforest.txt";
-		private String ndviResidualFile = "ndviData/NDVIRes.txt";
-		private String ndviDataFile = "ndviData/ndvi2001001.asc";
+		private String landuseFile ="LandData/landquality.txt";
+		private String farmerFile = "LandData/landtenure.txt";
+		private String urbanuseFile = "RLUData/rlurbareas.txt";
+		private String parklandFile = "LandData/landreserved.txt";
+		private String forestFile = "LandData/landforest.txt";
+		private String ndviResidualFile = "NDVIData/NDVIRes.txt";
+		private String ndviDataFile = "NDVIData/ndvi2001001.asc";
 		private String ethnicRegionsFile = "ethnicities/MurdockMOA.shp";
-		private String riverDataFile = "riverData/riverdataallaccum.txt";
-		private String weatherClusterControlFile = "clusterData/ClusterControl.txt";
+		private String riverDataFile = "RiverData/riverdataallaccum.txt";
+		private String weatherClusterControlFile = "ClusterData/ClusterControl.txt";
 
 		private String subArea = "";
 
