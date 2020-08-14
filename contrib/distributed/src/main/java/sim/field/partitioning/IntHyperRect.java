@@ -106,7 +106,7 @@ public class IntHyperRect implements Comparable<IntHyperRect>, Iterable<Int2D> {
 //
 //        return new IntHyperRect(-1, new Int2D(c1), new Int2D(c2));
 		return new IntHyperRect(-1, new Int2D(Math.max(ul.x, that.ul.x), Math.max(ul.y, that.ul.y)),
-									new Int2D(Math.min(br.y, that.br.y), Math.min(br.y, that.br.y)));
+									new Int2D(Math.min(br.x, that.br.x), Math.min(br.y, that.br.y)));
     }
 
     // Symmetric resize
