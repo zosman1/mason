@@ -18,6 +18,12 @@ import sim.field.storage.ContStorage;
 import sim.util.MPIParam;
 import sim.util.*;
 
+/**
+ * A countinous field that contains lists of objects of type T. Analogous to
+ * Mason's Continuous2D.
+ * 
+ * @param <T> Type of object stored in the field
+ */
 public class DContinuous2D<T extends Serializable> extends DAbstractGrid2D implements DGrid<T, NumberND> {
 
 	private HaloGrid2D<T, NumberND, ContStorage<T>> halo;
@@ -139,8 +145,8 @@ public class DContinuous2D<T extends Serializable> extends DAbstractGrid2D imple
 	// add also moves the objects in this field
 	public void moveAgent(NumberND fromP, NumberND toP, T t, int ordering, double time) {
 		if (!halo.inLocal(fromP)) {
-			//System.out.println("pid " + halo.partition.pid + " agent" + t);
-			//System.out.println("partitioning " + halo.partition.getPartition());
+			// System.out.println("pid " + halo.partition.pid + " agent" + t);
+			// System.out.println("partitioning " + halo.partition.getPartition());
 			throw new IllegalArgumentException("fromP must be local");
 		}
 

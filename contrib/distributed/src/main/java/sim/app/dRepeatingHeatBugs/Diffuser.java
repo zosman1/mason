@@ -9,7 +9,6 @@ package sim.app.dRepeatingHeatBugs;
 import sim.engine.DSteppable;
 import sim.engine.SimState;
 import sim.field.grid.DDoubleGrid2D;
-import sim.util.*;
 
 /**
  * This agent decreases evaporates and diffuses all the heat at each time step.

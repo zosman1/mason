@@ -13,7 +13,6 @@ import sim.util.*;
 import sim.engine.*;
 import java.awt.*;
 import java.rmi.Remote;
-import sim.util.*;
 
 public class DAnt extends DSteppable implements Remote
     {

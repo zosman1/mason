@@ -11,6 +11,7 @@ import sim.field.grid.DDoubleGrid2D;
 import sim.engine.DSteppable;
 import sim.util.*;
 
+
 public class DHeatBug extends DSteppable {
 	private static final long serialVersionUID = 1;
 

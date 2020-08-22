@@ -5,11 +5,14 @@ import java.util.stream.*;
 import sim.util.*;
 
 // TODO Currently all shapes are restricted to IntHyperRect - switch to NdRectangle once it is completed
+/**
+ * A node in a Quad Tree.
+ *
+ */
 public class QuadTreeNode {
-
 	final int nd;
 	int level, id; // which level in the tree the node is in, its node id
-	int proc; // which processer this node is mapped to
+	int processor; // which processer this node is mapped to
 
 	Int2D origin;
 	IntHyperRect shape;
@@ -33,12 +36,12 @@ public class QuadTreeNode {
 		id = newId;
 	}
 
-	public int getProc() {
-		return proc;
+	public int getProcessor() {
+		return processor;
 	}
 
-	public void setProc(final int newProc) {
-		proc = newProc;
+	public void setProcessor(final int newProcessor) {
+		processor = newProcessor;
 	}
 
 	public int getLevel() {
@@ -136,9 +139,12 @@ public class QuadTreeNode {
 		return ret;
 	}
 
-	// Split this node based on the given origin or move the origin if already
-	// splitted
-	// return the newly created QTNodes (if any)
+	/**
+	 * Split this node based on the given origin or move the origin if already split
+	 * 
+	 * @param newOrigin
+	 * @return the newly created QTNodes (if any)
+	 */
 	public List<QuadTreeNode> split(final Int2D newOrigin) {
 		final List<QuadTreeNode> ret = new ArrayList<QuadTreeNode>();
 
@@ -159,8 +165,11 @@ public class QuadTreeNode {
 		return ret;
 	}
 
-	// Merge all the children and make this node a leaf node
-	// return all the nodes that are merged
+	/**
+	 * Merge all the children and make this node a leaf node
+	 * 
+	 * @return all the nodes that are merged
+	 */
 	public List<QuadTreeNode> merge() {
 		final List<QuadTreeNode> ret = new ArrayList<QuadTreeNode>();
 
@@ -184,14 +193,19 @@ public class QuadTreeNode {
 		return parent.getChildren().indexOf(this);
 	}
 
-	// Return the direction (forward/backward) on the given dimension
+	/**
+	 * @param dim
+	 * @return the direction (forward/backward) on the given dimension
+	 */
 	public boolean getDir(final int dim) {
 		return ((getIndexInSiblings() >> (nd - dim - 1)) & 0x1) == 0x1;
 	}
 
-	// Print the current QTNode only
+	/**
+	 * Print the current QTNode only
+	 */
 	public String toString() {
-		String s = String.format("ID %2d PID %2d L%1d %s", id, proc, level, shape.toString());
+		String s = String.format("ID %2d PID %2d L%1d %s", id, processor, level, shape.toString());
 
 		if (origin != null)
 			s += " Origin " + origin;
@@ -199,7 +213,9 @@ public class QuadTreeNode {
 		return s;
 	}
 
-	// Print the QTNode and all its children
+	/**
+	 * Print the QTNode and all its children
+	 */
 	public String toStringAll() {
 		return toStringRecursive(new StringBuffer("Quad Tree\n"), "", true).toString();
 	}
@@ -216,7 +232,11 @@ public class QuadTreeNode {
 		return buf;
 	}
 
-	// Change my shape as well as all my children's
+	/**
+	 * Change my shape as well as all my children's
+	 * 
+	 * @param newShape
+	 */
 	protected void reshape(final IntHyperRect newShape) {
 		shape = newShape;
 		if (isLeaf())
@@ -229,7 +249,12 @@ public class QuadTreeNode {
 			children.get(i).reshape(getChildShape(i));
 	}
 
-	// Construct the child's shape based the given id and the origin
+	/**
+	 * Construct the child's shape based the given id and the origin
+	 * 
+	 * @param childId
+	 * @return child's shape
+	 */
 	protected IntHyperRect getChildShape(final int childId) {
 		final int[] ul = shape.ul().getArray();
 		final int[] br = origin.getArray();
@@ -244,7 +269,10 @@ public class QuadTreeNode {
 		return new IntHyperRect(-1, new Int2D(ul), new Int2D(br));
 	}
 
-	// Find the index of my immediate child that contains the given point
+	/**
+	 * @param p
+	 * @return the index of my immediate child that contains the given point
+	 */
 	protected int toChildIdx(final NumberND p) {
 		if (!shape.contains(p))
 			throw new IllegalArgumentException("p " + p + " must be inside the shape " + shape);

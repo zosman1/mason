@@ -41,6 +41,15 @@ import sim.util.MPIUtil;
 import sim.util.Timing;
 import sim.util.*;
 
+/**
+ * Analogous to Mason's SimState. This class represents the entire distributed
+ * simulation.
+ * 
+ * A Distributed Mason model will be implemented by extending this class and
+ * overriding the start and startRoot methods. The model must also implement a
+ * main method calling doLoopDistributed method from this class.
+ *
+ */
 public class DSimState extends SimState {
 	private static final long serialVersionUID = 1L;
 	public static Logger logger;
@@ -175,7 +184,7 @@ public class DSimState extends SimState {
 				e.printStackTrace();
 			}
 		}
-		
+
 		for (final PayloadWrapper payloadWrapper : transporter.objectQueue) {
 
 			/*
@@ -246,29 +255,29 @@ public class DSimState extends SimState {
 
 		transporter.objectQueue.clear();
 		Timing.stop(Timing.MPI_SYNC_OVERHEAD);
-		
-//		if(schedule.getSteps()>0) {
-//			if (schedule.getSteps()%50==0) {
-				
+
+//		if (schedule.getSteps() > 0) {
+//			if (schedule.getSteps() % 50 == 0) {
+//
 //				try {
-//				balancePartitions(balancerLevel);
+//					balancePartitions(balancerLevel);
 //				} catch (MPIException e) {
-					// TODO: handle exception
+//					// TODO: handle exception
 //				}
-//				if(balancerLevel!=0)
+//				if (balancerLevel != 0)
 //					balancerLevel--;
 //				else
-//					balancerLevel = ((QuadTreePartition)partition).getQt().getDepth()-1;
+//					balancerLevel = ((QuadTreePartition) partition).getQt().getDepth() - 1;
 //			}
 //		}
-		
+
 		try {
 			syncFields();
 			transporter.sync();
-		}catch (Exception e) {
+		} catch (Exception e) {
 			// TODO: handle exception
 		}
-		
+
 		for (final PayloadWrapper payloadWrapper : transporter.objectQueue) {
 
 			/*
@@ -339,12 +348,12 @@ public class DSimState extends SimState {
 	}
 
 	private void loadBalancing() {
-		if(schedule.getSteps()>0) {
-			if (schedule.getSteps()%50==0) {
+		if (schedule.getSteps() > 0) {
+			if (schedule.getSteps() % 50 == 0) {
 
 				try {
 					balancePartitions(balancerLevel);
-					
+
 					for (final PayloadWrapper payloadWrapper : transporter.objectQueue) {
 
 						/*
@@ -360,7 +369,8 @@ public class DSimState extends SimState {
 						 */
 
 						if (payloadWrapper.fieldIndex >= 0) {
-							((Synchronizable) fieldRegistry.get(payloadWrapper.fieldIndex)).syncObject(payloadWrapper); // add the
+							((Synchronizable) fieldRegistry.get(payloadWrapper.fieldIndex)).syncObject(payloadWrapper); // add
+																														// the
 							// object to
 							// the field
 						}
@@ -415,17 +425,16 @@ public class DSimState extends SimState {
 
 					transporter.objectQueue.clear();
 
-					
 				} catch (MPIException e) {
 					// TODO: handle exception
 				}
-				if(balancerLevel!=0)
+				if (balancerLevel != 0)
 					balancerLevel--;
 				else
-					balancerLevel = ((QuadTreePartition)partition).getQt().getDepth()-1;
+					balancerLevel = ((QuadTreePartition) partition).getQt().getDepth() - 1;
 			}
 		}
-		
+
 	}
 
 	private void balancePartitions(int level) throws MPIException {
@@ -433,37 +442,41 @@ public class DSimState extends SimState {
 		final int old_pid = partition.getPid();
 		final Double runtime = Timing.get(Timing.LB_RUNTIME).getMovingAverage();
 		Timing.start(Timing.LB_OVERHEAD);
-		((QuadTreePartition)partition).balance(runtime, level);
+		((QuadTreePartition) partition).balance(runtime, level);
 		MPI.COMM_WORLD.barrier();
-		//		System.out.println("pid "+partition.getPid()+" old_partitioning "+old_partition);
-		//		System.out.println("pid "+partition.getPid()+" new partition "+partition.getPartition());
-		ArrayList<Object>  migratedAgents = new ArrayList<>();
-		for(Int2D p : old_partition) {
-			if (!partition.getPartition().contains(p)){
+		// System.out.println("pid "+partition.getPid()+" old_partitioning
+		// "+old_partition);
+		// System.out.println("pid "+partition.getPid()+" new partition
+		// "+partition.getPartition());
+		ArrayList<Object> migratedAgents = new ArrayList<>();
+		for (Int2D p : old_partition) {
+			if (!partition.getPartition().contains(p)) {
 				final int toP = partition.toPartitionId(p);
 				for (Synchronizable field : fieldRegistry) {
-					if (((HaloGrid2D)field).getStorage() instanceof ContStorage) {
-						ContStorage st = (ContStorage) ((HaloGrid2D)field).getStorage();
+					if (((HaloGrid2D) field).getStorage() instanceof ContStorage) {
+						ContStorage st = (ContStorage) ((HaloGrid2D) field).getStorage();
 						HashSet agents = st.getCell(p);
 						for (Object a : agents) {
-							NumberND loc = st.getLocation((Serializable)a);
-							if(a instanceof Stopping && !migratedAgents.contains(a) && old_partition.contains(loc) && !partition.getPartition().contains(loc)) { 
-								//st.removeObject((Serializable) a);
-								((Stopping)a).getStoppable().stop();
-								transporter.migrateAgent((Stopping) a,toP,loc,((HaloGrid2D)field).fieldIndex);
+							NumberND loc = st.getLocation((Serializable) a);
+							if (a instanceof Stopping && !migratedAgents.contains(a) && old_partition.contains(loc)
+									&& !partition.getPartition().contains(loc)) {
+								// st.removeObject((Serializable) a);
+								((Stopping) a).getStoppable().stop();
+								transporter.migrateAgent((Stopping) a, toP, loc, ((HaloGrid2D) field).fieldIndex);
 								migratedAgents.add(a);
-								System.out.println("PID: "+partition.pid+" processor "+ old_pid +" move "+a+" from "+loc+" (point "+p+") to processor "+toP);
+								System.out.println("PID: " + partition.pid + " processor " + old_pid + " move " + a
+										+ " from " + loc + " (point " + p + ") to processor " + toP);
 							}
 						}
-					}else if(((HaloGrid2D)field).getStorage() instanceof ObjectGridStorage) {
-						ObjectGridStorage st = (ObjectGridStorage) ((HaloGrid2D)field).getStorage();
-						if(st.getObjects(p) != null) {
+					} else if (((HaloGrid2D) field).getStorage() instanceof ObjectGridStorage) {
+						ObjectGridStorage st = (ObjectGridStorage) ((HaloGrid2D) field).getStorage();
+						if (st.getObjects(p) != null) {
 							ArrayList<Stopping> agents = st.getObjects(p);
-							for (int i=0; i<agents.size();i++) {
+							for (int i = 0; i < agents.size(); i++) {
 								Object a = agents.get(i);
-								NumberND loc = st.getLocation((Serializable)a);
-								((Stopping)a).getStoppable().stop();
-								transporter.migrateAgent((Stopping)a,toP,p,((HaloGrid2D)field).fieldIndex);
+								NumberND loc = st.getLocation((Serializable) a);
+								((Stopping) a).getStoppable().stop();
+								transporter.migrateAgent((Stopping) a, toP, p, ((HaloGrid2D) field).fieldIndex);
 							}
 						}
 					}
@@ -514,8 +527,7 @@ public class DSimState extends SimState {
 	}
 
 	public static void doLoopDistributed(final Class<?> c, final String[] args, final int window) {
-		try
-			{
+		try {
 			Timing.setWindow(window);
 			MPI.Init(args);
 			Timing.start(Timing.LB_RUNTIME);
@@ -536,24 +548,21 @@ public class DSimState extends SimState {
 
 			doLoop(c, args);
 			MPI.Finalize();
-			}
-		catch (MPIException ex)
-			{
+		} catch (MPIException ex) {
 			throw new RuntimeException(ex);
-			}
+		}
 	}
 
 	/**
 	 * Modelers must override this method if they want to add any logic that is
 	 * unique to the root processor
 	 */
-	//protected void startRoot(HashMap<String, Object>[] maps) {
+	// protected void startRoot(HashMap<String, Object>[] maps) {
 	protected void startRoot() {
 
 	}
 
 	/**
-	 * 
 	 * @return the DRegistry instance, or null if the registry is not available. You
 	 *         can call this method after calling the start() method.
 	 */
@@ -580,7 +589,7 @@ public class DSimState extends SimState {
 				init = new HashMap[partition.numProcessors];
 				for (int i = 0; i < partition.getNumProc(); i++)
 					init[i] = new HashMap<String, Object>();
-				//startRoot(init);
+				// startRoot(init);
 				startRoot();
 			}
 			// synchronize using one to many communication
@@ -651,13 +660,13 @@ public class DSimState extends SimState {
 		return transporter;
 	}
 
-	public void sendRootInfoToAll(String key,Object sendObj) {
+	public void sendRootInfoToAll(String key, Object sendObj) {
 		for (int i = 0; i < partition.getNumProc(); i++) {
 			init[i].put(key, sendObj);
 		}
 	}
 
-	public void sendRootInfoToProc(int pid,String key,Object sendObj) {
+	public void sendRootInfoToProc(int pid, String key, Object sendObj) {
 		init[pid].put(key, sendObj);
 	}
 

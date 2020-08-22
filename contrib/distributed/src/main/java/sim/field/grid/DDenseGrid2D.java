@@ -13,6 +13,12 @@ import sim.field.partitioning.PartitionInterface;
 import sim.field.storage.ObjectGridStorage;
 import sim.util.*;
 
+/**
+ * A grid that contains lists of objects of type T. Analogous to Mason's
+ * DenseGrid2D
+ *
+ * @param <T> Type of object stored in the grid
+ */
 public class DDenseGrid2D<T extends Serializable> extends DAbstractGrid2D implements DGrid<T, NumberND> {
 
 	private HaloGrid2D<T, NumberND, ObjectGridStorage<ArrayList<T>>> halo;
@@ -158,9 +164,5 @@ public class DDenseGrid2D<T extends Serializable> extends DAbstractGrid2D implem
 	public void removeAndStopRepeatingAgent(NumberND p, DistributedIterativeRepeat iterativeRepeat) {
 		halo.removeAndStopRepeatingAgent(p, iterativeRepeat);
 	}
-
-//	public void moveRepeatingAgent(NumberND fromP, NumberND toP, DistributedIterativeRepeat iterativeRepeat) {
-//		halo.moveRepeatingAgent(fromP, toP, iterativeRepeat);
-//	}
 
 }

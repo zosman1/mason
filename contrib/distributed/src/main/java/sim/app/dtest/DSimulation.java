@@ -25,8 +25,10 @@ import sim.engine.DSimState;
 import sim.engine.Schedule;
 import sim.engine.SimState;
 import sim.field.continuous.DContinuous2D;
+//import sim.util.MPIUtil;
 import sim.util.Timing;
 import sim.util.*;
+
 
 public class DSimulation extends DSimState {
 	private static final long serialVersionUID = 1;

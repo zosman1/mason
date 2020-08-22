@@ -7,9 +7,14 @@ import mpi.*;
 import sim.util.*;
 
 // Consumer is Raw Type because it's parameter is of type int
+/**
+ * An interface for dividing the world into multiple partitions. Each partition
+ * then gets assigned to a node.
+ *
+ * @param <P> Type of point
+ */
 @SuppressWarnings("rawtypes")
 public abstract class PartitionInterface<P extends NumberND> {
-
 	public int pid, numProcessors, numDimensions;
 	public int[] size;
 	boolean isToroidal;
@@ -60,12 +65,19 @@ public abstract class PartitionInterface<P extends NumberND> {
 		return Arrays.copyOf(size, numDimensions);
 	}
 
-	public IntHyperRect getField() {
+	public IntHyperRect createField() {
 		return new IntHyperRect(size);
 	}
 
+	/**
+	 * @return partition for the current node
+	 */
 	public abstract IntHyperRect getPartition();
 
+	/**
+	 * @param pid
+	 * @return partition for pid node
+	 */
 	public abstract IntHyperRect getPartition(int pid);
 
 	public abstract int getNumNeighbors();
@@ -73,10 +85,22 @@ public abstract class PartitionInterface<P extends NumberND> {
 	public abstract int[] getNeighborIds();
 	// public abstract int[][] getNeighborIdsInOrder();
 
+	/**
+	 * @param p
+	 * @return partition id (pid) for the point p
+	 */
 	public abstract int toPartitionId(P p);
 
+	/**
+	 * @param c point as an int array
+	 * @return partition id (pid) for the point c[]
+	 */
 	public abstract int toPartitionId(int[] c);
 
+	/**
+	 * @param c point as an double array
+	 * @return partition id (pid) for the point c[]
+	 */
 	public abstract int toPartitionId(double[] c);
 
 	/**
@@ -87,13 +111,26 @@ public abstract class PartitionInterface<P extends NumberND> {
 
 	// TODO let other classes who depend on the partition scheme to register proper
 	// actions when partiton changes
+	/**
+	 * Register pre commit callbacks
+	 * 
+	 * @param r
+	 */
 	public void registerPreCommit(final Consumer r) {
 		preCallbacks.add(r);
 	}
 
+	/**
+	 * Register post commit callbacks
+	 * 
+	 * @param r
+	 */
 	public void registerPostCommit(final Consumer r) {
 		postCallbacks.add(r);
 	}
 
+	/**
+	 * Initialize partition
+	 */
 	public abstract void initialize(); // How to initialize the partition
 }
