@@ -1,5 +1,10 @@
 
 # MASON Layout
+
+![Mason Core](https://github.com/zosman1/mason/workflows/Mason%20Core/badge.svg)
+![Distributed Mason](https://github.com/zosman1/mason/workflows/Distributed%20Mason/badge.svg)
+
+
 This GitHub Repository for MASON contains the core MASON project in the mason/ directory and also contains various extensions to MASON in the contrib/ directory. Each extension in contrib/ is a project on its own. More details about MASON and its extensions can be found at the MASON website.
 
 ## Website
